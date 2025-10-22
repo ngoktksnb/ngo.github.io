@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>LOVE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        #canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #textCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: transparent;
+            border: 3px solid #FF1493;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #FF1493;
+            box-shadow: 0 0 30px rgba(255, 20, 147, 0.3);
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .play-button:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 0 50px rgba(255, 20, 147, 0.8);
+        }
+
+        .play-button.hidden {
+            display: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(255, 20, 147, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(255, 20, 147, 0.8);
+            }
+        }
+
+        /* Responsive cho mobile */
+        @media screen and (max-width: 768px) {
+            .play-button {
+                width: 90px;
+                height: 90px;
+                font-size: 30px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .play-button {
+                width: 70px;
+                height: 70px;
+                font-size: 24px;
+                border: 2px solid #FF1493;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <canvas id="textCanvas"></canvas>
+    
+    <!-- Nút Play -->
+    <button class="play-button" id="playButton">▶</button>
+    
+    <!-- Nhạc nền -->
+    <audio id="backgroundMusic" loop playsinline>
+        <source src="src/mp3/hoamoc.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Matrix characters - code rain style (không có tiếng Nhật)
+        const matrix = "iloveyou♥♡❤ILOVEYOUiloveu0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+-=[]{}|;:,.<>?/~`abcdefghijklmnopqrstuvwxyz";
+        const matrixArray = matrix.split('');
+
+        // Responsive font size cho matrix rain
+        const isMobile = window.innerWidth <= 768;
+        const fontSize = isMobile ? 16 : 24;
+        const columns = canvas.width / fontSize;
+
+        // Create array for drops
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.floor(Math.random() * canvas.height / fontSize);
+        }
+
+        // Matrix rain style - màu xanh lá hacker
+        const matrixColors = [
+            '#00FF00', // Xanh lá sáng (chủ đạo)
+            '#00DD00', // Xanh lá
+            '#00BB00', // Xanh lá đậm
+            '#009900', // Xanh lá đậm hơn
+            '#00FF41', // Xanh lá neon
+            '#00FF00', // Xanh lá sáng
+            '#00FF00', // Xanh lá sáng (nhiều hơn)
+            '#00FF00', // Xanh lá sáng (nhiều hơn)
+        ];
+
+        function draw() {
+            // Trail effect đậm hơn cho matrix rain
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                // Random character
+                const text = matrixArray[Math.floor(Math.random() * matrixArray.length)];
+                
+                // Chữ ở đầu dòng sáng hơn (màu trắng/xanh nhạt)
+                // Chữ phía sau thì xanh lá
+                const isHead = Math.random() > 0.95; // 5% chance là đầu
+                const color = isHead ? '#FFFFFF' : matrixColors[Math.floor(Math.random() * matrixColors.length)];
+                ctx.fillStyle = color;
+
+                // Draw character
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                // Reset drop to top randomly
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                // Move drop down
+                drops[i]++;
+            }
+        }
+
+        // Animation loop - nhanh hơn cho matrix rain
+        setInterval(draw, 30);
+
+        // Resize canvas on window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            textCanvas.width = window.innerWidth;
+            textCanvas.height = window.innerHeight;
+        });
+
+        // ============ FADE TEXT ANIMATION ============
+        const textCanvas = document.getElementById('textCanvas');
+        const textCtx = textCanvas.getContext('2d');
+        textCanvas.width = window.innerWidth;
+        textCanvas.height = window.innerHeight;
+
+        const words = ['Chúc', 'cậu', 'buổi sáng', 'vui', 'vẻ', 'nha🥰', '❤️Vũ Hoài Trang❤️', 'chúc', 'cậu', 'một ngày', 'xinh đẹp', 'như', 'những', '🌷bông hoa🌷', '🥰'];
+        let currentWordIndex = 0;
+        let hasStarted = false;
+        let countdownIndex = 0;
+        const countdownNumbers = ['3', '2', '1'];
+
+        // Random colors for text
+        const textColors = [
+            '#FF1493', '#FF00FF', '#9900FF', '#6600FF',
+            '#0099FF', '#00FFFF', '#00FF00', '#FFFF00',
+            '#FFD700', '#FFA500', '#FF0000', '#FF69B4'
+        ];
+
+        let currentText = '';
+        let currentColor = '';
+        let alpha = 0;
+        let fadeState = 'idle'; // 'fadeIn', 'hold', 'fadeOut', 'idle'
+        let fadeTimer = 0;
+
+        // Biến đếm số lần đã hiển thị hết tất cả chữ
+        let loopCount = 0;
+
+        // Hàm tính font size responsive
+        function getResponsiveFontSize() {
+            const width = window.innerWidth;
+            if (width <= 480) {
+                return 50; // Mobile nhỏ
+            } else if (width <= 768) {
+                return 70; // Mobile lớn / Tablet
+            } else {
+                return 120; // Desktop
+            }
+        }
+
+        // Animation loop cho text
+        function animateText() {
+            textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+            
+            if (fadeState !== 'idle' && currentText) {
+                textCtx.save();
+                textCtx.globalAlpha = alpha;
+                
+                // Font size responsive
+                const fontSize = getResponsiveFontSize();
+                textCtx.font = `bold ${fontSize}px "Dancing Script", cursive`;
+                textCtx.fillStyle = currentColor;
+                textCtx.textAlign = 'center';
+                textCtx.textBaseline = 'middle';
+                
+                // Bóng đổ nhiều lớp để nổi bật hơn (responsive shadow)
+                const shadowBlur = fontSize * 0.4;
+                textCtx.shadowBlur = shadowBlur;
+                textCtx.shadowColor = currentColor;
+                textCtx.fillText(currentText, textCanvas.width / 2, textCanvas.height / 2);
+                
+                // Vẽ thêm lớp shadow thứ 2 để đậm hơn
+                textCtx.shadowBlur = shadowBlur * 0.6;
+                textCtx.fillText(currentText, textCanvas.width / 2, textCanvas.height / 2);
+                
+                textCtx.restore();
+            }
+            
+            requestAnimationFrame(animateText);
+        }
+
+        animateText();
+
+        // Hiển thị chữ với fade in/out
+        function showText(text, callback) {
+            currentText = text;
+            currentColor = textColors[Math.floor(Math.random() * textColors.length)];
+            alpha = 0;
+            fadeState = 'fadeIn';
+            
+            // Fade in (0.5s)
+            const fadeInInterval = setInterval(() => {
+                alpha += 0.05;
+                if (alpha >= 1) {
+                    alpha = 1;
+                    clearInterval(fadeInInterval);
+                    fadeState = 'hold';
+                    
+                    // Hold (1s)
+                    setTimeout(() => {
+                        fadeState = 'fadeOut';
+                        
+                        // Fade out (0.5s)
+                        const fadeOutInterval = setInterval(() => {
+                            alpha -= 0.05;
+                            if (alpha <= 0) {
+                                alpha = 0;
+                                clearInterval(fadeOutInterval);
+                                fadeState = 'idle';
+                                if (callback) callback();
+                            }
+                        }, 25); // 25ms x 20 = 500ms
+                    }, 1000); // Hold 1s
+                }
+            }, 25); // 25ms x 20 = 500ms
+        }
+
+        // Hàm hiển thị đếm ngược
+        function showCountdown() {
+            if (countdownIndex < countdownNumbers.length) {
+                showText(countdownNumbers[countdownIndex], () => {
+                    countdownIndex++;
+                    setTimeout(() => {
+                        showCountdown();
+                    }, 200); // Delay 0.2s giữa các số
+                });
+            } else {
+                // Kết thúc đếm ngược, bắt đầu hiển thị chữ
+                setTimeout(() => {
+                    showWords();
+                }, 200);
+            }
+        }
+
+        // Hiển thị các chữ tuần tự
+        function showWords() {
+            showText(words[currentWordIndex], () => {
+                currentWordIndex++;
+                
+                // Kiểm tra nếu đã hiển thị hết tất cả chữ
+                if (currentWordIndex >= words.length) {
+                    currentWordIndex = 0;
+                    loopCount++;
+                    
+                    // Chuyển sang index2.html sau khi hiển thị hết 1 lần
+                    if (loopCount === 1) {
+                        setTimeout(() => {
+                            localStorage.removeItem('musicTime');
+                            window.location.href = 'index2.html';
+                        }, 500);
+                        return;
+                    }
+                }
+                
+                // Tiếp tục với chữ tiếp theo
+                setTimeout(() => {
+                    showWords();
+                }, 300); // Delay 0.3s giữa các chữ
+            });
+        }
+
+        // Xử lý nút Play
+        const playButton = document.getElementById('playButton');
+        const audio = document.getElementById('backgroundMusic');
+        audio.volume = 0.5; // Âm lượng 50%
+
+        let isStarted = false;
+        
+        function startExperience() {
+            if (isStarted) return; // Prevent double trigger
+            isStarted = true;
+            
+            // Ẩn nút play
+            playButton.classList.add('hidden');
+            
+            // Phát nhạc từ giây thứ 11
+            audio.currentTime = 11;
+            
+            // Dùng promise để handle mobile
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Phát nhạc thành công!');
+                }).catch(e => {
+                    console.log('Không thể phát nhạc:', e);
+                    // Thử lại
+                    setTimeout(() => {
+                        audio.play().catch(err => console.log('Retry failed:', err));
+                    }, 100);
+                });
+            }
+            
+            // Bắt đầu đếm ngược
+            hasStarted = true;
+            setTimeout(() => {
+                showCountdown();
+            }, 300);
+        }
+
+        // Chỉ dùng click event (nó cũng work với touch trên mobile)
+        playButton.addEventListener('click', startExperience);
+    </script>
+</body>
+</html>
+
+
