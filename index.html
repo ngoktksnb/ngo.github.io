@@ -214,9 +214,9 @@
         function getResponsiveFontSize() {
             const width = window.innerWidth;
             if (width <= 480) {
-                return 50; // Mobile nhỏ
+                return 70; // Mobile nhỏ (tăng từ 50)
             } else if (width <= 768) {
-                return 70; // Mobile lớn / Tablet
+                return 90; // Mobile lớn / Tablet (tăng từ 70)
             } else {
                 return 120; // Desktop
             }
@@ -237,14 +237,9 @@
                 textCtx.textAlign = 'center';
                 textCtx.textBaseline = 'middle';
                 
-                // Bóng đổ nhiều lớp để nổi bật hơn (responsive shadow)
-                const shadowBlur = fontSize * 0.4;
-                textCtx.shadowBlur = shadowBlur;
+                // Bóng đổ nhẹ hơn
+                textCtx.shadowBlur = 15;
                 textCtx.shadowColor = currentColor;
-                textCtx.fillText(currentText, textCanvas.width / 2, textCanvas.height / 2);
-                
-                // Vẽ thêm lớp shadow thứ 2 để đậm hơn
-                textCtx.shadowBlur = shadowBlur * 0.6;
                 textCtx.fillText(currentText, textCanvas.width / 2, textCanvas.height / 2);
                 
                 textCtx.restore();
