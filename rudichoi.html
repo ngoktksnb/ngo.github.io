@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rủ Đi Chơi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 1s ease-in;
+        }
+
+        .counter {
+            color: #fff;
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+            display: none;
+        }
+
+        .buttons-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            position: relative;
+            width: 100%;
+            height: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn {
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-yes {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-width: 150px;
+            min-height: 60px;
+            position: relative;
+            z-index: 1001;
+        }
+
+        .btn-yes:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-no {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            min-width: 150px;
+            min-height: 60px;
+            position: fixed;
+            transition: left 0.15s ease-out, top 0.15s ease-out, transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .btn-no:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+
+        /* Responsive */
+        @media screen and (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 30px;
+            }
+
+            .buttons-container {
+                gap: 20px;
+            }
+
+            .btn {
+                padding: 15px 30px;
+                font-size: 1.2rem;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rủ Đi Chơi Nhé! 💕</h1>
+        <div class="counter" id="counter">Đã ấn "Không": 0 lần</div>
+        <div class="buttons-container">
+            <button class="btn btn-yes" id="btnYes">Có</button>
+        </div>
+        <button class="btn btn-no" id="btnNo">Không</button>
+    </div>
+
+    <script>
+        const btnYes = document.getElementById('btnYes');
+        const btnNo = document.getElementById('btnNo');
+        const counter = document.getElementById('counter');
+        const buttonsContainer = document.querySelector('.buttons-container');
+        
+        let scaleFactorYes = 1;
+        let scaleFactorNo = 1;
+        let clickCount = 0;
+        const scaleIncrement = 0.1;
+        const minScaleNo = 0.3; // Kích thước tối thiểu của nút "Không"
+        let isInitialized = false; // Flag để biết đã khởi tạo vị trí ban đầu chưa
+
+        // Khởi tạo vị trí ban đầu cho nút "Không"
+        function initNoButtonPosition() {
+            // Đợi DOM render xong
+            setTimeout(() => {
+                const btnYesRect = btnYes.getBoundingClientRect();
+                const btnNoRect = btnNo.getBoundingClientRect();
+                
+                // Kiểm tra xem nút "Có" đã có vị trí chưa
+                if (btnYesRect.width === 0 || btnYesRect.height === 0) {
+                    return; // Chưa render xong, thử lại sau
+                }
+                
+                // Tính toán để điểm giữa 2 nút ở chính giữa màn hình
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                const gap = 30;
+                
+                // Center của màn hình
+                const screenCenterX = windowWidth / 2;
+                const screenCenterY = windowHeight / 2;
+                
+                // Để điểm giữa 2 nút ở chính giữa màn hình:
+                // - Nút "Có" center = screenCenterX - (gap/2 + btnNoRect.width/2)
+                // - Nút "Không" center = screenCenterX + (gap/2 + btnYesRect.width/2)
+                // Điểm giữa = (btnYesCenterX + btnNoCenterX) / 2 = screenCenterX
+                
+                const btnYesCenterX = screenCenterX - (gap / 2 + btnNoRect.width / 2);
+                const btnYesCenterY = screenCenterY;
+                
+                const btnNoCenterX = screenCenterX + (gap / 2 + btnYesRect.width / 2);
+                const btnNoCenterY = screenCenterY;
+                
+                // Đặt vị trí nút "Có" bằng cách điều chỉnh buttons-container
+                // Tính offset cần thiết để nút "Có" ở đúng vị trí (cả ngang và dọc)
+                const currentBtnYesCenterX = btnYesRect.left + btnYesRect.width / 2;
+                const currentBtnYesCenterY = btnYesRect.top + btnYesRect.height / 2;
+                const offsetX = btnYesCenterX - currentBtnYesCenterX;
+                const offsetY = btnYesCenterY - currentBtnYesCenterY;
+                
+                // Điều chỉnh vị trí nút "Có" bằng transform (cả ngang và dọc)
+                if (Math.abs(offsetX) > 1 || Math.abs(offsetY) > 1) {
+                    buttonsContainer.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+                }
+                
+                // Đặt vị trí nút "Không" (cả ngang và dọc)
+                btnNo.style.left = `${btnNoCenterX}px`;
+                btnNo.style.top = `${btnNoCenterY}px`;
+                btnNo.style.transform = `translate(-50%, -50%) scale(${scaleFactorNo})`;
+                isInitialized = true; // Đánh dấu đã khởi tạo xong
+            }, 300);
+        }
+
+        // Hàm di chuyển nút "Không" đi xa khỏi chuột
+        function moveNoButtonAway(mouseX, mouseY) {
+            // Chỉ di chuyển nếu đã khởi tạo xong
+            if (!isInitialized) {
+                return;
+            }
+            
+            const btnNoRect = btnNo.getBoundingClientRect();
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // Tính toán vị trí center của nút "Không" (tính từ góc trên trái màn hình)
+            const btnNoCenterX = btnNoRect.left + btnNoRect.width / 2;
+            const btnNoCenterY = btnNoRect.top + btnNoRect.height / 2;
+            
+            // Tính khoảng cách từ chuột đến nút
+            const dx = mouseX - btnNoCenterX;
+            const dy = mouseY - btnNoCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Nếu chuột đến gần (trong vòng 200px), di chuyển nút đi
+            if (distance < 200) {
+                // Tính góc ngược lại với hướng chuột
+                const angle = Math.atan2(dy, dx);
+                // Khoảng cách di chuyển phụ thuộc vào khoảng cách (càng gần càng chạy xa)
+                const moveDistance = 150 + (200 - distance) * 0.5; // Từ 150px đến 250px
+                
+                // Tính vị trí mới
+                let newX = btnNoCenterX - Math.cos(angle) * moveDistance;
+                let newY = btnNoCenterY - Math.sin(angle) * moveDistance;
+                
+                // Giới hạn trong phạm vi màn hình - đảm bảo toàn bộ nút luôn hiển thị
+                const btnHalfWidth = btnNoRect.width / 2;
+                const btnHalfHeight = btnNoRect.height / 2;
+                
+                // Giới hạn để toàn bộ nút luôn nằm trong màn hình
+                const maxX = windowWidth - btnHalfWidth;
+                const maxY = windowHeight - btnHalfHeight;
+                const minX = btnHalfWidth;
+                const minY = btnHalfHeight;
+                
+                newX = Math.max(minX, Math.min(maxX, newX));
+                newY = Math.max(minY, Math.min(maxY, newY));
+                
+                // Di chuyển nút
+                btnNo.style.left = `${newX}px`;
+                btnNo.style.top = `${newY}px`;
+                btnNo.style.transform = `translate(-50%, -50%) scale(${scaleFactorNo})`;
+            }
+        }
+
+        // Lắng nghe sự kiện di chuyển chuột
+        document.addEventListener('mousemove', function(e) {
+            moveNoButtonAway(e.clientX, e.clientY);
+        });
+
+        // Khởi tạo vị trí ban đầu sau khi DOM sẵn sàng
+        function initializeButtons() {
+            // Thử nhiều lần để đảm bảo
+            initNoButtonPosition();
+            setTimeout(initNoButtonPosition, 200);
+            setTimeout(initNoButtonPosition, 500);
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeButtons);
+        } else {
+            initializeButtons();
+        }
+        
+        // Cũng khởi tạo khi window load xong để đảm bảo
+        window.addEventListener('load', function() {
+            setTimeout(initNoButtonPosition, 200);
+        });
+
+        btnNo.addEventListener('click', function() {
+            // Tăng số lần ấn
+            clickCount++;
+            counter.textContent = `Đã ấn "Không": ${clickCount} lần`;
+            
+            // Tăng kích thước nút "Có" - transform sẽ tự động transition mượt mà
+            scaleFactorYes += scaleIncrement;
+            btnYes.style.transform = `scale(${scaleFactorYes})`;
+            
+            // Giảm kích thước nút "Không"
+            scaleFactorNo = Math.max(minScaleNo, scaleFactorNo - scaleIncrement);
+            const currentLeft = btnNo.style.left;
+            const currentTop = btnNo.style.top;
+            if (currentLeft && currentTop) {
+                btnNo.style.transform = `translate(-50%, -50%) scale(${scaleFactorNo})`;
+            }
+        });
+
+        btnYes.addEventListener('click', function() {
+            alert('Yay! Hẹn gặp bạn nhé! 🎉💕');
+        });
+
+        // Xử lý resize window
+        window.addEventListener('resize', function() {
+            initNoButtonPosition();
+        });
+    </script>
+</body>
+</html>
